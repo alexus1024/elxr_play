@@ -1,0 +1,54 @@
+basePath: /api
+definitions:
+  main.CounterResponse:
+    properties:
+      value:
+        type: integer
+    type: object
+  main.LLMRequest:
+    properties:
+      prompt:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: A simple API with counter and fake LLM endpoints
+  title: Simple Go API
+  version: "1.0"
+paths:
+  /counter/next:
+    post:
+      consumes:
+      - application/json
+      description: Returns the next sequential number from memory
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.CounterResponse'
+      summary: Get next counter value
+      tags:
+      - counter
+  /llm/chat:
+    post:
+      consumes:
+      - application/json
+      description: Takes a prompt and streams response tokens via Server-Sent Events
+      parameters:
+      - description: Prompt text
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/main.LLMRequest'
+      produces:
+      - text/event-stream
+      responses:
+        "200":
+          description: Event stream
+      summary: Fake LLM endpoint
+      tags:
+      - llm
+swagger: "2.0"

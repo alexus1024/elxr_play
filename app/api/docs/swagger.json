@@ -1,0 +1,84 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "A simple API with counter and fake LLM endpoints",
+        "title": "Simple Go API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "basePath": "/api",
+    "paths": {
+        "/counter/next": {
+            "post": {
+                "description": "Returns the next sequential number from memory",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "counter"
+                ],
+                "summary": "Get next counter value",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/main.CounterResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/llm/chat": {
+            "post": {
+                "description": "Takes a prompt and streams response tokens via Server-Sent Events",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "text/event-stream"
+                ],
+                "tags": [
+                    "llm"
+                ],
+                "summary": "Fake LLM endpoint",
+                "parameters": [
+                    {
+                        "description": "Prompt text",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.LLMRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Event stream"
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "main.CounterResponse": {
+            "type": "object",
+            "properties": {
+                "value": {
+                    "type": "integer"
+                }
+            }
+        },
+        "main.LLMRequest": {
+            "type": "object",
+            "properties": {
+                "prompt": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}
