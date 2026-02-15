@@ -18,6 +18,9 @@ load:
 
 deploy: load
 	kubectl kustomize deploy/overlays/$(OVERLAY) | ssh $(RPI_HOST) kubectl apply -f -
+	@for app in $(APPS); do \
+		ssh $(RPI_HOST) kubectl rollout restart deployment/$$app -n elxr; \
+	done
 
 clean:
 	@for app in $(APPS); do \
