@@ -1,0 +1,22 @@
+# Deploy to AWS EKS.
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+
+patches:
+  - target:
+      kind: Service
+      name: api
+    patch: |-
+      - op: remove
+        path: /spec/ports/0/nodePort
+      - op: replace
+        path: /spec/type
+        value: LoadBalancer
+
+images:
+  - name: alexus_test_apps/elxr_rp5/api
+    newName: ECR_URL_PLACEHOLDER/api
+    newTag: latest

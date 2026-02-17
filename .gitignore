@@ -1,2 +1,8 @@
 elxr-minimal-rpi5*.img.zst
 .claude/settings.local.json
+
+
+infra/environments/dev/.terraform*
+infra/environments/dev/terraform.tfstate
+infra/environments/dev/terraform.tfstate.backup
+
