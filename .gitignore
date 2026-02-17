@@ -6,3 +6,4 @@ infra/environments/dev/.terraform*
 infra/environments/dev/terraform.tfstate
 infra/environments/dev/terraform.tfstate.backup
 
+app/.env

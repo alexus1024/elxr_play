@@ -15,8 +15,16 @@ patches:
       - op: replace
         path: /spec/type
         value: LoadBalancer
+  - target:
+      kind: Deployment
+      name: api
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: Always
 
 images:
   - name: alexus_test_apps/elxr_rp5/api
-    newName: ECR_URL_PLACEHOLDER/api
+    newName: 306607894964.dkr.ecr.ca-central-1.amazonaws.com/api
     newTag: latest
+

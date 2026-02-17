@@ -1,28 +1,69 @@
-PLATFORM ?= linux/arm64
+-include .env
+export
+
 APPS := api
-RPI_HOST ?= root@elxr-rpi5
-OVERLAY ?= rpi
 
-.PHONY: build load deploy clean $(APPS)
+# --- RPi5 (k3s) ---
+RPI_HOST  ?= root@elxr-rpi5
+RPI_IMAGE  = alexus_test_apps/elxr_rp5
 
-build: $(APPS)
+# --- EKS (AWS) ---
+AWS_REGION ?= ca-central-1
+ECR_URL    ?= UPDATE_ME.dkr.ecr.ca-central-1.amazonaws.com
 
-$(APPS):
-	docker build --platform $(PLATFORM) -t alexus_test_apps/elxr_rp5/$@:latest $@
+.PHONY: build-rp5 build-eks load-rp5 deploy-rp5 deploy-eks clean $(APPS)
 
-load:
+# === Builds ===
+
+build-rp5:
 	@for app in $(APPS); do \
-		echo "==> Loading alexus_test_apps/elxr_rp5/$$app to $(RPI_HOST)"; \
-		docker save alexus_test_apps/elxr_rp5/$$app:latest | ssh $(RPI_HOST) k3s ctr images import -; \
+		docker build --platform linux/arm64 -t $(RPI_IMAGE)/$$app:latest $$app; \
 	done
 
-deploy: load
-	kubectl kustomize deploy/overlays/$(OVERLAY) | ssh $(RPI_HOST) kubectl apply -f -
+build-eks:
+	@for app in $(APPS); do \
+		docker build --platform linux/amd64 -t $(ECR_URL)/$$app:latest $$app; \
+	done
+
+# === RPi5 ===
+
+load-rp5: build-rp5
+	@for app in $(APPS); do \
+		echo "==> Loading $(RPI_IMAGE)/$$app to $(RPI_HOST)"; \
+		docker save $(RPI_IMAGE)/$$app:latest | ssh $(RPI_HOST) k3s ctr images import -; \
+	done
+
+deploy-rp5: load-rp5
+	kubectl kustomize deploy/overlays/rpi | ssh $(RPI_HOST) kubectl apply -f -
 	@for app in $(APPS); do \
 		ssh $(RPI_HOST) kubectl rollout restart deployment/$$app -n elxr; \
 	done
 
-clean:
+# === EKS ===
+
+push-eks: build-eks
+	aws ecr get-login-password --region $(AWS_REGION) | docker login --username AWS --password-stdin $(ECR_URL)
 	@for app in $(APPS); do \
-		docker rmi alexus_test_apps/elxr_rp5/$$app:latest 2>/dev/null || true; \
+		docker push $(ECR_URL)/$$app:latest; \
+	done
+
+deploy-eks: push-eks
+	kubectl apply -k deploy/overlays/aws
+	@for app in $(APPS); do \
+		kubectl rollout restart deployment/$$app -n elxr; \
+	done
+
+watch-eks:
+	kubectl get pods -n elxr -w
+
+# === Clean ===
+
+clean-rp5:
+	@for app in $(APPS); do \
+		docker rmi $(RPI_IMAGE)/$$app:latest 2>/dev/null || true; \
+	done
+
+clean-eks:
+	@for app in $(APPS); do \
+		docker rmi $(ECR_URL)/$$app:latest 2>/dev/null || true; \
 	done
