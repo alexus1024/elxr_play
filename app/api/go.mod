@@ -3,7 +3,7 @@ module app
 go 1.24
 
 require (
-	github.com/caarlos0/env/v11 v11.2.0
+	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/swaggo/http-swagger v1.3.4
 	github.com/swaggo/swag v1.16.3
 )

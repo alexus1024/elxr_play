@@ -11,16 +11,21 @@ RPI_IMAGE  = alexus_test_apps/elxr_rp5
 AWS_REGION ?= ca-central-1
 ECR_URL    ?= UPDATE_ME.dkr.ecr.ca-central-1.amazonaws.com
 
-.PHONY: build-rp5 build-eks load-rp5 deploy-rp5 deploy-eks clean $(APPS)
+.PHONY: build-rp5 build-eks load-rp5 deploy-rp5 deploy-eks apply-config-rp5 clean $(APPS)
+
+# === Pre-build/codegen ===
+
+swagger:
+	cd api && swag init
 
 # === Builds ===
 
-build-rp5:
+build-rp5: swagger
 	@for app in $(APPS); do \
 		docker build --platform linux/arm64 -t $(RPI_IMAGE)/$$app:latest $$app; \
 	done
 
-build-eks:
+build-eks: swagger
 	@for app in $(APPS); do \
 		docker build --platform linux/amd64 -t $(ECR_URL)/$$app:latest $$app; \
 	done
@@ -32,6 +37,9 @@ load-rp5: build-rp5
 		echo "==> Loading $(RPI_IMAGE)/$$app to $(RPI_HOST)"; \
 		docker save $(RPI_IMAGE)/$$app:latest | ssh $(RPI_HOST) k3s ctr images import -; \
 	done
+
+apply-config-rp5:
+	kubectl kustomize deploy/overlays/rpi | ssh $(RPI_HOST) kubectl apply -f -
 
 deploy-rp5: load-rp5
 	kubectl kustomize deploy/overlays/rpi | ssh $(RPI_HOST) kubectl apply -f -

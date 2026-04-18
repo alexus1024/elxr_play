@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-config
+  namespace: elxr
+data:
+  API_MAX_COUNTER: "100"
+  API_INIT_COUNTER: "1"
+  API_COUNTER_RESPONSE_DELAY: "1s"
+  API_PORT: "8080"
+  API_DEBUG: "true"
+  API_LOG_LEVEL: "debug"

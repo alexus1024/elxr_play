@@ -31,6 +31,27 @@ paths:
       summary: Get next counter value
       tags:
       - counter
+  /kill:
+    post:
+      description: Shuts down the application. mode=graceful (default), panic, exit.
+        exit accepts code=N query param.
+      parameters:
+      - description: 'Stop mode: graceful, panic, exit'
+        in: query
+        name: mode
+        type: string
+      - description: Exit code (only for mode=exit, default 1)
+        in: query
+        name: code
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Application shutting down
+      summary: Stops the current instance
+      tags:
+      - debug
   /llm/chat:
     post:
       consumes:

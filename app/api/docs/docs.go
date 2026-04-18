@@ -38,6 +38,37 @@ const docTemplate = `{
                 }
             }
         },
+        "/kill": {
+            "post": {
+                "description": "Shuts down the application. mode=graceful (default), panic, exit. exit accepts code=N query param.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "debug"
+                ],
+                "summary": "Stops the current instance",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Stop mode: graceful, panic, exit",
+                        "name": "mode",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Exit code (only for mode=exit, default 1)",
+                        "name": "code",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Application shutting down"
+                    }
+                }
+            }
+        },
         "/llm/chat": {
             "post": {
                 "description": "Takes a prompt and streams response tokens via Server-Sent Events",

@@ -2,13 +2,12 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
 	"sync"
-
-	"github.com/caarlos0/env/v11"
+	"syscall"
 )
 
 type App struct {
@@ -17,6 +16,7 @@ type App struct {
 	counter    int
 	counterMu  sync.Mutex
 	httpServer *http.Server
+	quit       chan struct{}
 }
 
 // @title Simple Go API
@@ -37,6 +37,7 @@ func New(ctx context.Context, cfg Config) (*App, error) {
 	app := &App{
 		config: cfg,
 		logger: logger,
+		quit:   make(chan struct{}),
 	}
 
 	logger.InfoContext(ctx, "app initialized", slog.Int("port", cfg.Port))
@@ -60,21 +61,38 @@ func (a *App) Stop(ctx context.Context) error {
 }
 
 func main() {
-	var cfg Config
-	if err := env.Parse(&cfg); err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to parse config: %v\n", err)
+	cfg, err := LoadConfig()
+	if err != nil {
+		slog.Error("Can not load config", "error", err)
 		os.Exit(1)
 	}
 
 	ctx := context.Background()
 	app, err := New(ctx, cfg)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to create app: %v\n", err)
+		slog.Error("failed to create app", "error", err)
 		os.Exit(1)
 	}
 
-	if err := app.Start(ctx); err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to start server: %v\n", err)
-		os.Exit(1)
+	go func() {
+		if err := app.Start(ctx); err != nil {
+			slog.Error("failed to start server", "error", err)
+			os.Exit(1)
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	select {
+	case <-quit:
+	case <-app.quit:
 	}
+
+	shutdownCtx, cancel := context.WithTimeout(ctx, cfg.ShutdownTimeout)
+	defer cancel()
+	if err := app.Stop(shutdownCtx); err != nil {
+		slog.Error("failed to stop server", "error", err)
+	}
+
+	app.logger.InfoContext(ctx, "server stopped gracefully")
 }

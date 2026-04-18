@@ -19,9 +19,9 @@ spec:
           imagePullPolicy: Never
           ports:
             - containerPort: 8080
-          env:
-            - name: PORT
-              value: "8080"
+          envFrom:
+            - configMapRef:
+                name: api-config
           readinessProbe:
             httpGet:
               path: /health
