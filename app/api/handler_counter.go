@@ -29,4 +29,6 @@ func (a *App) handleCounterNext(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(w, `{"value":%d}`, currentValue)
+
+	a.natsConn.Publish("events.counter", []byte(fmt.Sprintf(`{"newValue":%d}`, currentValue)))
 }

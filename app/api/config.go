@@ -8,13 +8,14 @@ import (
 )
 
 type Config struct {
-	Port                 int           `env:"PORT,required"`
-	Debug                bool          `env:"DEBUG,required"`
-	LogLevel             string        `env:"LOG_LEVEL,required"`
-	MaxCounter           string        `env:"MAX_COUNTER,default=10"`
-	InitCounter          string        `env:"INIT_COUNTER,default=0"`
-	CounterResponseDelay time.Duration `env:"COUNTER_RESPONSE_DELAY,default=0s"`
-	ShutdownTimeout      time.Duration `env:"SHUTDOWN_TIMEOUT, default=10s"`
+	Port                 int           `required:"true"`
+	Debug                bool          `required:"true"`
+	LogLevel             string        `required:"true" split_words:"true"`
+	MaxCounter           string        `default:"10" split_words:"true"`
+	InitCounter          string        `default:"0" split_words:"true"`
+	CounterResponseDelay time.Duration `default:"0s" split_words:"true"`
+	ShutdownTimeout      time.Duration `default:"10s" split_words:"true"`
+	NatsUrl              string        `required:"true" split_words:"true"`
 }
 
 func LoadConfig() (Config, error) {

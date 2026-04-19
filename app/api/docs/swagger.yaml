@@ -31,6 +31,23 @@ paths:
       summary: Get next counter value
       tags:
       - counter
+  /events:
+    get:
+      description: Server-Sent Events stream of all app events (counter, requests,
+        etc). Subscribes to NATS events.> subject.
+      parameters:
+      - description: Stream timeout in seconds (default 30)
+        in: query
+        name: timeout
+        type: integer
+      produces:
+      - text/event-stream
+      responses:
+        "200":
+          description: Event stream
+      summary: Stream live events
+      tags:
+      - events
   /kill:
     post:
       description: Shuts down the application. mode=graceful (default), panic, exit.

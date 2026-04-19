@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/nats-io/nats.go"
 )
 
 func (a *App) handleIndex(w http.ResponseWriter, r *http.Request) {
@@ -19,6 +21,17 @@ func (a *App) handleIndex(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) handleHealth(w http.ResponseWriter, r *http.Request) {
+
+	if a.natsConn == nil {
+		http.Error(w, "NATS initializing", http.StatusServiceUnavailable)
+		return
+	}
+
+	nStatus := a.natsConn.Status()
+	if nStatus != nats.CONNECTED {
+		http.Error(w, "NATS connection not healthy", http.StatusServiceUnavailable)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(w, `{"status":"ok"}`)
 }

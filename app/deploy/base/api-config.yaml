@@ -10,3 +10,4 @@ data:
   API_PORT: "8080"
   API_DEBUG: "true"
   API_LOG_LEVEL: "debug"
+  API_NATS_URL: "nats://nats:4222"

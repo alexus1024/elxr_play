@@ -2,12 +2,15 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
+
+	"github.com/nats-io/nats.go"
 )
 
 type App struct {
@@ -17,6 +20,7 @@ type App struct {
 	counterMu  sync.Mutex
 	httpServer *http.Server
 	quit       chan struct{}
+	natsConn   *nats.Conn
 }
 
 // @title Simple Go API
@@ -34,17 +38,25 @@ func New(ctx context.Context, cfg Config) (*App, error) {
 	})
 	logger := slog.New(logHandler)
 
-	app := &App{
-		config: cfg,
-		logger: logger,
-		quit:   make(chan struct{}),
+	logger.InfoContext(ctx, "loaded app configuration", slog.Any("config", cfg))
+
+	nc, err := nats.Connect(cfg.NatsUrl)
+	if err != nil {
+		return nil, fmt.Errorf("connect TO NATS: %w", err)
 	}
 
-	logger.InfoContext(ctx, "app initialized", slog.Int("port", cfg.Port))
+	app := &App{
+		config:   cfg,
+		logger:   logger,
+		natsConn: nc,
+		quit:     make(chan struct{}),
+	}
+
+	logger.InfoContext(ctx, "app initialized", slog.Int("port", cfg.Port), slog.String("natsUrl", cfg.NatsUrl))
 	return app, nil
 }
 
-func (a *App) Start(ctx context.Context) error {
+func (a *App) StartApi(ctx context.Context) error {
 	a.setupRoutes()
 	a.logger.InfoContext(ctx, "starting server", slog.String("addr", a.httpServer.Addr))
 
@@ -75,7 +87,7 @@ func main() {
 	}
 
 	go func() {
-		if err := app.Start(ctx); err != nil {
+		if err := app.StartApi(ctx); err != nil {
 			slog.Error("failed to start server", "error", err)
 			os.Exit(1)
 		}
@@ -87,6 +99,13 @@ func main() {
 	case <-quit:
 	case <-app.quit:
 	}
+
+	err = app.natsConn.Drain()
+	if err != nil {
+		slog.Error("failed to drain NATS connection", "error", err)
+	}
+
+	app.natsConn.Close() // this will unblock possible blocked handlers
 
 	shutdownCtx, cancel := context.WithTimeout(ctx, cfg.ShutdownTimeout)
 	defer cancel()

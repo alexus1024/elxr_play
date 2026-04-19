@@ -38,6 +38,31 @@ const docTemplate = `{
                 }
             }
         },
+        "/events": {
+            "get": {
+                "description": "Server-Sent Events stream of all app events (counter, requests, etc). Subscribes to NATS events.\u003e subject.",
+                "produces": [
+                    "text/event-stream"
+                ],
+                "tags": [
+                    "events"
+                ],
+                "summary": "Stream live events",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Stream timeout in seconds (default 30)",
+                        "name": "timeout",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Event stream"
+                    }
+                }
+            }
+        },
         "/kill": {
             "post": {
                 "description": "Shuts down the application. mode=graceful (default), panic, exit. exit accepts code=N query param.",
