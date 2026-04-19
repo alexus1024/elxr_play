@@ -1,0 +1,26 @@
+nats:
+  config:
+    cluster:
+      enabled: false
+    jetstream:
+      enabled: true
+
+replicaCount: 2
+
+image:
+  repository: alexus_test_apps/elxr_rp5/api
+  tag: latest
+  pullPolicy: Never
+
+service:
+  port: 8080
+  nodePort: 30080
+
+config:
+  port: "8080"
+  debug: "true"
+  logLevel: "debug"
+  maxCounter: "100"
+  initCounter: "1"
+  counterResponseDelay: "1s"
+  natsUrl: "nats://api-nats:4222"

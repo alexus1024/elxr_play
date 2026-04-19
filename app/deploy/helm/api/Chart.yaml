@@ -1,0 +1,11 @@
+apiVersion: v2
+name: api
+description: Elxr play API
+type: application
+version: 0.1.0
+appVersion: "latest"
+
+dependencies:
+  - name: nats
+    version: "1.x.x"
+    repository: "https://nats-io.github.io/k8s/helm/charts"

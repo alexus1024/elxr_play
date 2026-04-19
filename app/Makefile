@@ -11,7 +11,7 @@ RPI_IMAGE  = alexus_test_apps/elxr_rp5
 AWS_REGION ?= ca-central-1
 ECR_URL    ?= UPDATE_ME.dkr.ecr.ca-central-1.amazonaws.com
 
-.PHONY: build-rp5 build-eks load-rp5 deploy-rp5 deploy-eks apply-config-rp5 deploy-nats-rpi5 undeploy-nats-rpi5 clean $(APPS)
+.PHONY: build-rp5 build-eks load-rp5 deploy-rp5 deploy-eks deploy-nats-rpi5 undeploy-nats-rpi5 undeploy-api-rpi5 clean $(APPS)
 
 # === Pre-build/codegen ===
 
@@ -40,6 +40,9 @@ deploy-nats-rpi5:
 undeploy-nats-rpi5:
 	ssh $(RPI_HOST) helm uninstall nats --namespace elxr
 
+undeploy-api-rpi5:
+	ssh $(RPI_HOST) helm uninstall api --namespace elxr
+
 # === RPi5 ===
 
 load-rp5: build-rp5
@@ -49,16 +52,12 @@ load-rp5: build-rp5
 		docker save $(RPI_IMAGE)/$$app:latest | ssh $(RPI_HOST) k3s ctr images import -; \
 	done
 
-apply-config-rp5:
-	kubectl kustomize deploy/overlays/rpi | ssh $(RPI_HOST) kubectl apply -f -
-
 deploy-rp5: load-rp5
-	kubectl kustomize deploy/overlays/rpi | ssh $(RPI_HOST) kubectl apply -f -
-	@for app in $(APPS); do \
-		ssh $(RPI_HOST) kubectl rollout restart deployment/$$app -n elxr; \
-		
-	done
-# ssh $(RPI_HOST) kubectl delete pods -l app=$$app -n elxr; \ - replace rollout if something wrong with deployment
+	helm dependency update deploy/helm/api
+	helm package deploy/helm/api -d /tmp
+	scp /tmp/api-0.1.0.tgz $(RPI_HOST):/tmp/api.tgz
+	ssh $(RPI_HOST) helm upgrade --install api /tmp/api.tgz --namespace elxr --create-namespace
+	ssh $(RPI_HOST) kubectl rollout restart deployment/api -n elxr
 
 # === EKS ===
 
